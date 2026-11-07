@@ -19,3 +19,7 @@ Alpaca 使用 ALPACA_API_KEY、ALPACA_SECRET_KEY。选择美股或 ETF 行情线
 电脑 Chrome/Edge 使用顶部安装或地址栏安装图标；Android Chrome 菜单安装；iPhone/iPad Safari 分享→添加到主屏幕。PWA 缓存公共页面外壳，不缓存云端资料、登录接口和 AI 回复，云端需要联网。
 
 npm ci；npm run dev 运行本地 Demo；npm test 测试；npm run build:pages 构建 GitHub Pages 版本，推送 main 自动发布。所有密钥与密码交付文件均不在仓库。
+
+## 行情覆盖与日期轴
+
+云端不再生成或绘制 Demo 行情。研究工作台切换日期/自选后自动从 Supabase 后端读取 Alpaca；保留手动刷新按钮。历史行情优先 SIP，账户无权限时回退 IEX，来源与缺失明确展示。现金指数 SPX/NDX/SOX 不支持，可手动选择 SPY/QQQ/SOXX ETF（不是指数本身）。无数据资产不再阻断其他有数据资产，日期轴使用独立日历锚点，空图仍保持所选年份。
