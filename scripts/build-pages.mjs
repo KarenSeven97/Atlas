@@ -1,0 +1,2 @@
+import {spawnSync} from 'node:child_process';
+for(const args of [['node_modules/typescript/bin/tsc','-b'],['node_modules/vite/bin/vite.js','build']]){const r=spawnSync(process.execPath,args,{stdio:'inherit',env:{...process.env,ATLAS_BASE:'/Atlas/',VITE_ATLAS_CLOUD:'true',VITE_ATLAS_PUBLIC:'true',VITE_ATLAS_API_BASE:'https://kcwyrkewzjkydnyctnkc.supabase.co/functions/v1/atlas-public'}});if(r.status)process.exit(r.status)}

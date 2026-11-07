@@ -1,0 +1,4 @@
+import type {PriceBar} from './data';
+export const windows=[-5,-1,1,5,20,60];
+export function marketDate(value:string,timezone:string){if(!value.includes('T'))return value;const d=new Date(value);if(Number.isNaN(+d))throw Error('时间无效；时间戳必须带时区');return new Intl.DateTimeFormat('en-CA',{timeZone:timezone,year:'numeric',month:'2-digit',day:'2-digit'}).format(d);}
+export function study(prices:PriceBar[],benchmark:PriceBar[],eventDate:string){const ps=[...prices].sort((a,b)=>a.date.localeCompare(b.date));const i=ps.findIndex(p=>p.date>=eventDate);return {aligned:i<0?null:ps[i].date,rows:windows.map(w=>{const base=ps[i],end=ps[i+w];if(i<0||!base||!end)return {window:w,return:null,abnormal:null};const ret=(end.close/base.close-1)*100;const b0=benchmark.find(p=>p.date===base.date),b1=benchmark.find(p=>p.date===end.date);return {window:w,return:ret,abnormal:b0&&b1?ret-(b1.close/b0.close-1)*100:null};})};}
