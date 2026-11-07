@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node server/dev.mjs",
     "build": "tsc -b && vite build",
-    "test": "tsx --test src/note-links.test.ts src/cloud-session.test.ts src/research.test.ts src/model.test.ts src/interactions.test.ts src/markdown-import.test.ts && node --test server/providers.test.mjs",
+    "test": "tsx --test src/note-links.test.ts src/cloud-session.test.ts src/research.test.ts src/model.test.ts src/interactions.test.ts src/markdown-import.test.ts && node --test server/providers.test.mjs && node --test cloud/services.test.mjs",
     "dev:web": "vite",
     "build:cloud": "node scripts/build-cloud.mjs",
     "test:cloud": "node --test cloud/*.test.mjs",

@@ -27,3 +27,9 @@ Node.js 24，运行 npm ci 和 npm run dev。无需 API Key 的本地 Demo 可�
 资料表为 Trading 项目的 public.atlas_workspace（data 为完整资料，revision 为版本）。顶部已同步云端表示保存成功。
 
 AI 密钥配置入口：https://supabase.com/dashboard/project/kcwyrkewzjkydnyctnkc/functions/secrets 。添加 DEEPSEEK_API_KEY 和 GEMINI_API_KEY，值为各自提供商的 API Key。不要提交到 GitHub。Secrets 只负责服务端存储；当前公开版不读取这些变量，AI 调用仍未启用，需要后续接入带权限及限流的云端 AI 服务。
+
+## 云端 AI 与 Alpaca
+
+Supabase Secrets: GEMINI_API_KEY、DEEPSEEK_API_KEY；优先 Gemini（自动获取可用 Flash 文本模型，或通过 GEMINI_MODEL 指定），失败回退 DeepSeek（默认 deepseek-chat，可配置 DEEPSEEK_MODEL）。设置中可测试自动回退，事件笔记下方可分析；实际提供商和模型随结果记录。公开 AI 有每日及短期限流。
+
+Alpaca 使用 Trading 已有 ALPACA_API_KEY、ALPACA_SECRET_KEY。在研究工作台选择 NVDA/AMD/TSM/QQQ 等美股/ETF 行情线，点击读取当前区间 Alpaca 日线。IEX 单一交易所、拆股复权、不含分红；从 2016 年起请求，缺失不填。SPX/NDX/SOX 现金指数及 A 股不由 Alpaca 提供；保持 Demo 或 CSV 导入，不能当作真实指数。下载的日线随工作区保存至 Supabase。Trading 现有 alpaca-market 函数不做修改。
