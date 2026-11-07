@@ -1,0 +1,10 @@
+import {useRef,useState} from 'react';
+import type {EventV2} from '../model';
+import {linkQueryAt,insertNoteLink} from '../note-links';
+export function NoteEditor({value,change,events}:{value:string;change:(v:string)=>void;events:EventV2[]}){
+ const input=useRef<HTMLTextAreaElement>(null),[span,setSpan]=useState<ReturnType<typeof linkQueryAt>>(null),[active,setActive]=useState(0);
+ const candidates=span?events.filter(e=>(e.title+' '+(e.aliases||[]).join(' ')).toLowerCase().includes(span.query.toLowerCase())).slice(0,8):[];
+ function inspect(el:HTMLTextAreaElement){setSpan(linkQueryAt(el.value,el.selectionStart));setActive(0)}
+ function choose(e:EventV2){if(!span)return;const next=insertNoteLink(value,span,e.id,e.title);change(next.text);setSpan(null);requestAnimationFrame(()=>{input.current?.focus();input.current?.setSelectionRange(next.caret,next.caret)})}
+ return <div className="note-editor-wrap"><textarea ref={input} className="note-editor" aria-label="Markdown 笔记" aria-expanded={!!span} aria-controls={span?'note-link-options':undefined} aria-activedescendant={span&&candidates.length?'note-link-'+active:undefined} placeholder="Markdown 笔记 · 输入 [[ 搜索笔记" value={value} onChange={e=>{change(e.target.value);inspect(e.target)}} onSelect={e=>inspect(e.currentTarget)} onBlur={()=>setSpan(null)} onKeyDown={e=>{if(!span||e.nativeEvent.isComposing)return;if(e.key==='Escape'){e.preventDefault();setSpan(null)}else if(candidates.length&&['ArrowDown','ArrowUp'].includes(e.key)){e.preventDefault();setActive((active+(e.key==='ArrowDown'?1:candidates.length-1))%candidates.length)}else if(candidates.length&&['Enter','Tab'].includes(e.key)){e.preventDefault();choose(candidates[active])}}}/>{span&&<div className="note-link-options" id="note-link-options" role="listbox" aria-label="相关笔记">{candidates.length?candidates.map((e,i)=><button type="button" role="option" aria-selected={i===active} id={'note-link-'+i} key={e.id} className={i===active?'active':''} onMouseDown={e=>e.preventDefault()} onClick={()=>choose(e)}><strong>{e.title}</strong><small>{e.date}</small></button>):<small>没有匹配的笔记</small>}</div>}</div>
+}

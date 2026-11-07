@@ -1,0 +1,5 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {linkQueryAt,insertNoteLink,inDateWindow} from './note-links';
+test('wiki completion detects an open link at the caret, including auto-closed brackets',()=>{assert.deepEqual(linkQueryAt('研究 [[泡沫]] 后文',7),{start:3,end:9,query:'泡沫'});assert.equal(linkQueryAt('[[已完成]] 文本',10),null);assert.equal(linkQueryAt('[[跨\n行',6),null)});
+test('inserting a suggestion preserves surrounding text and uses a stable ID',()=>{const text='研究 [[泡沫]] 后文',span=linkQueryAt(text,7)!;const next=insertNoteLink(text,span,'event-2','泡沫高点');assert.equal(next.text,'研究 [[event-2|泡沫高点]] 后文');assert.equal(next.text.slice(next.caret),' 后文')});
+test('date filter includes endpoints and overlapping multi-day events',()=>{const r={from:'2015-01-01',to:'2020-12-31'};assert.equal(inDateWindow({date:'2008-09-15'},r),false);assert.equal(inDateWindow({date:r.from},r),true);assert.equal(inDateWindow({date:r.to},r),true);assert.equal(inDateWindow({date:'2014-12-01',endDate:'2015-02-01'},r),true)});
