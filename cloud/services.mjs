@@ -1,22 +1,10 @@
 import {complete} from './providers.mjs';
 const error=(message)=>{throw Error(message)};
-const modelCache=new Map();
-export async function geminiModel(env,fetcher=fetch){
- if(env('GEMINI_MODEL'))return env('GEMINI_MODEL');
- if(modelCache.has('gemini'))return modelCache.get('gemini');
- const r=await fetcher('https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000',{headers:{'x-goog-api-key':env('GEMINI_API_KEY')},signal:AbortSignal.timeout(12000)});
- if(!r.ok)error('Gemini 模型列表 HTTP '+r.status);
- const d=await r.json();const models=(d.models||[]).filter(m=>m.supportedGenerationMethods?.includes('generateContent')&&/gemini.*flash/i.test(m.name)&&!/(image|audio|tts|live|robotics|computer)/i.test(m.name)).sort((a,b)=>b.name.localeCompare(a.name,undefined,{numeric:true}));
- const name=models[0]?.name?.replace(/^models\//,'');if(!name)error('Gemini 没有可用文本模型');modelCache.set('gemini',name);return name;
-}
-export async function autoComplete(env,context,prompt,{runner=complete,discover=geminiModel,only}={}){
- const attempts=[];
- for(const provider of only?[only]:['gemini','deepseek']){
-  const key=env(provider==='gemini'?'GEMINI_API_KEY':'DEEPSEEK_API_KEY');if(!key){attempts.push({provider,error:'未配置密钥'});continue}
-  try{const model=provider==='gemini'?await discover(env):env('DEEPSEEK_MODEL')||'deepseek-chat';const text=await runner({provider,model,key},context,prompt,AbortSignal.timeout(40000));return {text,provider,model,fallback:provider==='deepseek'&&!only,attempts}}
-  catch(e){attempts.push({provider,error:e.name==='TimeoutError'||e.name==='AbortError'?'请求超时':String(e.message).startsWith('提供商')||String(e.message).startsWith('Gemini')?e.message:'服务调用失败'})}
- }
- error(attempts.map(a=>a.provider+'：'+a.error).join('；'));
+export async function autoComplete(env,context,prompt,{runner=complete}={}){
+ const key=env('DEEPSEEK_API_KEY');if(!key)throw Error('缺少 DEEPSEEK_API_KEY');
+ const model=env('DEEPSEEK_MODEL')||'deepseek-chat';
+ const text=await runner({provider:'deepseek',model,key},context,prompt,AbortSignal.timeout(40000));
+ return {text,provider:'deepseek',model};
 }
 export async function alpacaBars(env,symbol,from,to,fetcher=fetch){
  if(!/^[A-Z][A-Z0-9.-]{0,14}$/.test(symbol)||['SPX','NDX','SOX','SSE','CSI300','CHINEXT'].includes(symbol))error('Alpaca 支持美股个股和 ETF，不提供这些指数或 A 股');
