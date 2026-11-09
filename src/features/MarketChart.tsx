@@ -44,6 +44,5 @@ export function MarketChart({data,assets,instruments,range,onRange,selected,curs
  return <div className="market-wrap">
   <div className="market-canvas"><div ref={el}/>{position!==null&&<div className="date-marker" style={{left:position}}/>}</div>
   <div className="quote-readout"><time>{activeDay}</time>{assets.map((id,i)=>{const close=data[id]?.find(p=>p.date===activeDay)?.close,currency=instruments.find(a=>a.id===id)?.currency||'';return <span key={id}><i style={{background:chartColor(i)}}/><b>{id}</b> 收盘 {close===undefined?'—':close.toFixed(2)+' '+currency}</span>})}</div>
-  <div className="chart-note">日线收盘价 · 右轴为价格 · 各股票币种见读数 · 沿用数据源复权口径 · 无当日行情显示 — · <a href="https://www.tradingview.com/" target="_blank" rel="noreferrer">TradingView Lightweight Charts™</a></div>
  </div>
 }

@@ -48,9 +48,9 @@ function select(id:string){setId(id);setOpen(true);const e=events.find(e=>e.id==
 function add(){const e=newEvent();change({...a!,events:[...a!.events,e]});select(e.id);setPage('事件库');setEdit(true)}
 async function loadMarket(){
  const supported=a!.instruments.filter(i=>a!.watchlist.includes(i.id)&&i.market==='美股'&&!['SPX','NDX','SOX'].includes(i.id)&&/^[A-Z][A-Z0-9.-]{0,14}$/.test(i.id));
- if(!supported.length){setMarketNotice('请在行情线中选择 NVDA、AMD、TSM、QQQ 等美股或 ETF；SPX/NDX/SOX、A 股不在 Alpaca 覆盖内。');return}
+ if(!supported.length){setMarketNotice('请选择支持的美股股票。');return}
  setMarketBusy(true);const results=await Promise.allSettled(supported.slice(0,8).map(async i=>({id:i.id,...await cloudRequest('market?'+new URLSearchParams({symbol:i.id,from:range.from,to:range.to}))})));
- const bars:Atlas['prices']=[],messages:string[]=supported.length>8?['单次读取前 8 个资产，其余请分批选择']:[],empty:string[]=[],loaded:string[]=[];results.forEach((r,i)=>{if(r.status==='fulfilled'){bars.push(...r.value.bars);loaded.push(r.value.id);if(!r.value.bars.length)empty.push(r.value.id);messages.push(r.value.id+'（'+r.value.source+'）：'+r.value.bars.length+' 条，'+(r.value.firstDate||'无数据')+' ~ '+(r.value.lastDate||'无数据')+(r.value.warning?'；'+r.value.warning:''))}else messages.push(supported[i].id+'：'+r.reason.message)});
+ const bars:Atlas['prices']=[],messages:string[]=supported.length>8?['单次读取前 8 个资产，其余请分批选择']:[],empty:string[]=[],loaded:string[]=[];results.forEach((r,i)=>{if(r.status==='fulfilled'){bars.push(...r.value.bars);loaded.push(r.value.id);if(!r.value.bars.length)empty.push(r.value.id);}else messages.push(supported[i].id+'：'+r.reason.message)});
  if(bars.length)setA(current=>{if(!current)return current;const map=new Map(current.prices.map(p=>[p.instrumentId+p.date,p]));for(const p of bars)map.set(p.instrumentId+p.date,p);return {...current,prices:[...map.values()]}});
  setMarketMissing(current=>[...current.filter(id=>!loaded.includes(id)),...empty]);setMarketNotice(messages.join(' · '));setMarketBusy(false);
 }
@@ -77,4 +77,4 @@ createRoot(document.getElementById('root')!).render(<CloudAccess><App/></CloudAc
 
 
 
-if('serviceWorker' in navigator&&import.meta.env.PROD&&import.meta.env.BASE_URL==='/Atlas/'){window.addEventListener('load',()=>{navigator.serviceWorker.register('/Atlas/sw.js',{scope:'/Atlas/',updateViaCache:'none'}).catch(()=>{})})}
+if('serviceWorker' in navigator&&import.meta.env.PROD&&import.meta.env.BASE_URL==='/Atlas/'){window.addEventListener('load',()=>{navigator.serviceWorker.register('/Atlas/sw.js',{scope:'/Atlas/',updateViaCache:'none'}).then(r=>r.update()).catch(()=>{})})}
