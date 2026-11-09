@@ -1,6 +1,6 @@
 import {useLayoutEffect,useRef,useState,useMemo} from 'react';
 import {createChart,LineSeries,ColorType,TickMarkType,CrosshairMode,PriceScaleMode,type IChartApi,type ISeriesApi,type Time} from 'lightweight-charts';
-import {normalizedWindow,calendarAnchor,chartColor,quoteAt} from '../chart-data';
+import {priceWindow,calendarAnchor,chartColor} from '../chart-data';
 import {DAY,clampRange} from '../interactions';
 import {date,type EventV2} from '../model';
 import type {PriceBar,Instrument} from '../data';
@@ -8,12 +8,9 @@ import type {Range} from './Charts';
 
 function time(t:Time){return typeof t==='string'?t:typeof t==='number'?date(t*1000):`${t.year}-${String(t.month).padStart(2,'0')}-${String(t.day).padStart(2,'0')}`}
 export function MarketChart({data,assets,instruments,range,onRange,selected,cursor,onCursor,light}:{data:Record<string,PriceBar[]>;assets:string[];instruments:Instrument[];range:Range;onRange:(r:Range)=>void;selected?:EventV2;cursor:string;onCursor:(s:string)=>void;light:boolean}){
- const [baseDate,setBaseDate]=useState('');
- const view=useMemo(()=>normalizedWindow(data,assets,range,baseDate),[data,assets,range,baseDate]);
- // Freeze the comparison origin: a viewport change must never change a quote's value.
- useLayoutEffect(()=>{if(!baseDate&&view.baseDate)setBaseDate(view.baseDate)},[baseDate,view.baseDate]);
+ const view=useMemo(()=>priceWindow(data,assets,range),[data,assets,range]);
  const calendarRef=useRef<ISeriesApi<'Line'>|null>(null),lines=useRef<ISeriesApi<'Line'>[]>([]);
- const [position,setPosition]=useState<number|null>(null),[notice,setNotice]=useState('');
+ const [position,setPosition]=useState<number|null>(null);
  const el=useRef<HTMLDivElement>(null),api=useRef<IChartApi|null>(null);
  const props=useRef({range,onRange,onCursor});props.current={range,onRange,onCursor};
  useLayoutEffect(()=>{
@@ -38,19 +35,15 @@ export function MarketChart({data,assets,instruments,range,onRange,selected,curs
  // Update every series and the shared viewport before the browser paints.
  useLayoutEffect(()=>{const c=api.current;if(!c)return;
   calendarRef.current?.setData(calendarAnchor(range).map(p=>({...p,time:p.time as Time})));
-  lines.current.forEach((line,i)=>line.setData(view.series[i].map(p=>({...p,time:p.time as Time}))));
+  lines.current.forEach((line,i)=>line.setData(view[i].map(p=>({...p,time:p.time as Time}))));
   c.priceScale('right').applyOptions({mode:PriceScaleMode.Normal,autoScale:true});
   c.timeScale().setVisibleRange({from:range.from as Time,to:range.to as Time});
  },[view,range,assets,light]);
  const activeDay=cursor&&cursor>=range.from&&cursor<=range.to?cursor:selected?.date&&selected.date>=range.from&&selected.date<=range.to?selected.date:range.to;
  useLayoutEffect(()=>{setPosition(api.current?.timeScale().timeToCoordinate(activeDay as Time)??null)},[activeDay,view,range,assets,light]);
- function rebase(){const next=normalizedWindow(data,assets,range);if(next.baseDate){setBaseDate(next.baseDate);setNotice('')}else setNotice('当前区间没有共同交易日，基准保持不变')}
  return <div className="market-wrap">
-  <div className="comparison-toolbar"><span>基准化指数 · {view.baseDate?view.baseDate+' = 100':'等待行情'}</span><button onClick={rebase}>当前区间设为 100</button></div>
   <div className="market-canvas"><div ref={el}/>{position!==null&&<div className="date-marker" style={{left:position}}/>}</div>
-  <div className="quote-readout"><time>{activeDay}</time>{assets.map((id,i)=>{const q=quoteAt(data,id,activeDay,view.baseDate),currency=instruments.find(a=>a.id===id)?.currency||'';return <span key={id}><i style={{background:chartColor(i)}}/><b>{id}</b> 收盘 {q.close===null?'—':q.close.toFixed(2)+' '+currency} · 指数 {q.index===null?'—':q.index.toFixed(2)}</span>})}</div>
-  {!!view.missingBase.length&&<div className="chart-note">{view.missingBase.join('、')} 缺少基准日行情；可用「当前区间设为 100」重新对齐。</div>}
-  {notice&&<div className="chart-note" role="status">{notice}</div>}
-  <div className="chart-note">缩放不改变基准 · 右轴为指数，非股价 · 收盘价按各自本币、沿用数据源复权口径 · 无当日行情显示 — · <a href="https://www.tradingview.com/" target="_blank" rel="noreferrer">TradingView Lightweight Charts™</a></div>
+  <div className="quote-readout"><time>{activeDay}</time>{assets.map((id,i)=>{const close=data[id]?.find(p=>p.date===activeDay)?.close,currency=instruments.find(a=>a.id===id)?.currency||'';return <span key={id}><i style={{background:chartColor(i)}}/><b>{id}</b> 收盘 {close===undefined?'—':close.toFixed(2)+' '+currency}</span>})}</div>
+  <div className="chart-note">日线收盘价 · 右轴为价格 · 各股票币种见读数 · 沿用数据源复权口径 · 无当日行情显示 — · <a href="https://www.tradingview.com/" target="_blank" rel="noreferrer">TradingView Lightweight Charts™</a></div>
  </div>
 }
